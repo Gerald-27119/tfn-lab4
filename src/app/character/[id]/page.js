@@ -1,50 +1,36 @@
-"use client";
+import {notFound} from 'next/navigation';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+export async function generateMetadata({params}) {
+    const {id} = await params;
 
-export default function CharacterPage() {
-    const router = useRouter();
-    const { id } = router.query;
-    const [character, setCharacter] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const characterResponse = await fetch(`https://rickandmortyapi.com/api/character/${id}`);
+    if (!characterResponse.ok) {
+        return {
+            title: 'Postać nie znaleziona',
+        };
+    }
+    const characterData = await characterResponse.json();
 
-    useEffect(() => {
-        if (id) {
-            console.log(id);
-            fetch(`https://rickandmortyapi.com/api/character/${id}`)
-                .then((res) => {
-                    if (!res.ok) throw new Error("Network response was not ok");
-                    return res.json();
-                })
-                .then((data) => {
-                    setCharacter(data);
-                    setLoading(false);
-                })
-                .catch((err) => {
-                    setError(err);
-                    setLoading(false);
-                });
-        }
-    }, [id]);
+    return {
+        title: characterData.name,
+    };
+}
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error.message}</p>;
+export default async function CharacterPage({params}) {
+    const {id} = await params;
+
+    const characterResponse = await fetch(`https://rickandmortyapi.com/api/character/${id}`);
+    if (!characterResponse.ok) {
+        notFound();
+    }
+    const characterData = await characterResponse.json();
 
     return (
         <div>
-            {character ? (
-                <>
-                    <h1>{character.name}</h1>
-                    <img src={character.image} alt={character.name} />
-                    <p>Status: {character.status}</p>
-                    <p>Species: {character.species}</p>
-                    <p>Gender: {character.gender}</p>
-                </>
-            ) : (
-                <p>No character found</p>
-            )}
+            <h1>{characterData.name}</h1>
+            <img src={characterData.image} alt={characterData.name}/>
+            <p>Status: {characterData.status}</p>
+            <p>Gatunek: {characterData.species}</p>
         </div>
     );
 }
